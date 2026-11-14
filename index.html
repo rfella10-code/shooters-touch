@@ -614,10 +614,10 @@ function horseJoinPanel(prefill=''){
 
 // ---------- Challenger ----------
 const TIERS=[
-  {n:'Park',setup:3.0,speed:95,rise:0.7,contest:0.025,hMax:272,bite:1,dMin:12,dMax:18,need:5,fade:false,pace:'Slow closeout'},
-  {n:'High School',setup:2.6,speed:120,rise:0.55,contest:0.032,hMax:269,bite:0.9,dMin:14,dMax:21,need:6,fade:false,pace:'Quick closeout'},
-  {n:'College',setup:2.2,speed:145,rise:0.45,contest:0.038,hMax:263,bite:0.7,dMin:16,dMax:23,need:6,fade:true,pace:'Fast closeout'},
-  {n:'Pro',setup:1.9,speed:170,rise:0.38,contest:0.045,hMax:259,bite:0.55,dMin:18,dMax:25,need:7,fade:true,pace:'Elite closeout'},
+  {n:'Park',setup:3.0,speed:95,rise:0.7,contest:0.02,graze:0.008,hMax:271,bite:1,dMin:12,dMax:18,need:5,fade:false,pace:'Slow closeout'},
+  {n:'High School',setup:2.6,speed:120,rise:0.55,contest:0.035,graze:0.014,hMax:265,bite:0.9,dMin:14,dMax:21,need:6,fade:false,pace:'Quick closeout'},
+  {n:'College',setup:2.2,speed:145,rise:0.45,contest:0.05,graze:0.02,hMax:258,bite:0.7,dMin:16,dMax:23,need:6,fade:true,pace:'Fast closeout'},
+  {n:'Pro',setup:1.9,speed:170,rise:0.38,contest:0.058,graze:0.022,hMax:255,bite:0.55,dMin:18,dMax:25,need:6,fade:true,pace:'Elite closeout'},
 ];
 const SHOT_CLOCK=5,HAND_LOW=335,DEF_GAP=42;
 const WEATHER={clear:{n:'Clear skies',tip:'Perfect conditions'},gusty:{n:'Gusty',tip:'Wind shifts mid-flight'},rain:{n:'Rain',tip:'Wet ball. Your grip may slip'},glare:{n:'Sun glare',tip:'Sun in your eyes. The meter washes out'},cold:{n:'Cold snap',tip:'Hard ball, lively rim, quick meter'},dusk:{n:'Dusk',tip:'Lights are out. Trust your stroke'}};
@@ -664,7 +664,9 @@ function chalReset(C,d){const gap=Math.max(0,(RIM_C-10)-(releaseX(d)+DEF_GAP));O
 function handTarget(){const C=S.chal,T=TIERS[C.tier];if(C.jump>0)return C.jump>0.45?T.hMax-30:HAND_LOW+10;return HAND_LOW-C.level*(HAND_LOW-T.hMax)-(C.contest>0?3:0);}
 function handY(){const C=S.chal;return C.hy==null?handTarget():C.hy;}
 function handX(){return releaseX(S.d)+DEF_GAP-4+(S.chal.cx||0);}
-function checkBlock(B,ev){const hx=handX(),hy=handY();if(B.x>hx-BALL_R-6&&B.x<hx+6&&B.y>hy-BALL_R-4){B.blocked=true;B.vx=-Math.abs(B.vx)*0.25-40;B.vy=Math.abs(B.vy)*0.2+60;ev.push('block');}}
+function checkBlock(B,ev){const hx=handX(),hy=handY(),top=hy-BALL_R-4;if(B.x<=hx-BALL_R-6||B.x>=hx+6)return;
+  if(B.y>top){B.blocked=true;B.vx=-Math.abs(B.vx)*0.25-40;B.vy=Math.abs(B.vy)*0.2+60;ev.push('block');return;}
+  if(!B.grazed&&S.chal.level>0.5&&S.chal.jump<=0&&B.y>top-16){B.grazed=true;const k=TIERS[S.chal.tier].graze*(1-(top-B.y)/16)*S.chal.level;B.vx*=1+(Math.random()*2-1)*k;B.vy*=1+(Math.random()*2-1)*k;ev.push('graze');}}
 function pumpFake(){
   const C=S.chal;if(!C||!defOn()||(S.phase!=='aim'&&S.phase!=='power')||C.faked)return;
   C.faked=true;C.lockT=0.3;fakeBtn.disabled=true;sfx.release();
@@ -1070,6 +1072,7 @@ function update(dt,now){
       if(e==='rim'){sfx.rim();S.rimShake=1;netKick(0.9);B.sq=0.45;}
       else if(e==='board'){sfx.board();S.boardShake=1;B.sq=0.55;}
       else if(e==='floor'){sfx.floor();B.sq=0.9;}
+      else if(e==='graze'){S.texts.push({t:'ALTERED',color:COL.fire,size:22,x:W/2,y:190,life:1.1});tone(700,0.06,'triangle',0.05);}
       else if(e==='block'){sfx.board();B.sq=0.7;if(!reduced)S.shake=0.25;}
       else if(e==='made'){const sw=!B.rim&&!B.board,lz=!B.board&&S.angle<=LASER_MAX,col=lz?'110,205,255':sw?'255,193,77':'94,211,155',big=sw||lz;
         if(sw)sfx.swish();else noise(0.2,2200,0.18);if(lz)tone(1320,0.18,'triangle',0.06,500);
