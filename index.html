@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="description" content="Swish: pick your arc, time your release, catch fire.">
+<meta name="description" content="Shooter’s Touch: pick your arc, time your release, beat the closeout.">
 <style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}[hidden]{display:none!important}</style>
 </head>
 <body>
-<title>Swish</title>
+<title>Shooter’s Touch</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Teko:wght@500;600;700&family=Barlow:wght@400;500;600;700&display=swap">
 <style>
@@ -72,7 +72,7 @@ canvas{display:block;width:100%;aspect-ratio:400/430;max-width:100%;touch-action
 .overlay.sheet .card{pointer-events:auto}
 .card{animation:cardIn .24s cubic-bezier(.2,.8,.3,1.2) both;width:100%;max-width:380px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;box-sizing:border-box;display:flex;flex-direction:column;gap:12px;max-height:100%;overflow:auto;box-shadow:0 18px 40px rgba(0,0,0,.45)}
 .card h2{margin:0;font-family:var(--font-display);font-weight:600;font-size:34px;line-height:.9;letter-spacing:.03em;text-transform:uppercase;text-wrap:balance}
-.card h2.logo{font-size:64px;color:var(--ball);letter-spacing:.06em;line-height:.8}
+.card h2.logo{font-size:clamp(34px,10.5vw,52px);overflow-wrap:anywhere;color:var(--ball);letter-spacing:.05em;line-height:.82}
 .card p{margin:0;color:var(--muted);line-height:1.4}
 .card p.strong{color:var(--text)}
 .menu{display:flex;flex-direction:column;gap:8px}
@@ -110,13 +110,13 @@ textarea.fallback{width:100%;box-sizing:border-box;background:var(--arena);color
 @keyframes bump{0%{transform:scale(1.28)}60%{transform:scale(.96)}100%{transform:scale(1)}}
 .hud .score{transform-origin:right center}.hud .score.bump{animation:bump .32s ease-out}
 @media (prefers-reduced-motion:reduce){.card,.hud .score.bump{animation:none}}
-@media (max-width:380px){.card h2.logo{font-size:54px}.hud .score{font-size:40px}}
+@media (max-width:380px){.card h2.logo{font-size:clamp(34px,10.5vw,52px)}.hud .score{font-size:40px}}
 </style>
 
 <div class="app">
   <header class="hud" id="hud">
     <div>
-      <div class="mode" id="hudMode">Swish</div>
+      <div class="mode" id="hudMode">Shooter’s Touch</div>
       <div class="sub" id="hudSub">Pick your arc. Time your release.</div>
     </div>
     <div>
@@ -409,7 +409,7 @@ function dailyResolve(r,mult){
   if(D.i>=10){S.phase='over';if(D.counts)store.set('daily:'+D.key,{score:S.score,grid:D.grid.join('')});setTimeout(()=>dailyCard(S.score,D.grid.join(''),D.counts),900);return;}
   S.nextAt=performance.now()+700;S.after=dailyNext;
 }
-function dailyShareText(score,grid,key){const [y,m,d]=key.split('-').map(Number);const dt=new Date(y,m-1,d);const lab=dt.toLocaleDateString(undefined,{month:'short',day:'numeric'});return `Swish Daily · ${lab}\n${grid.slice(0,10)}\n${score} pts`;}
+function dailyShareText(score,grid,key){const [y,m,d]=key.split('-').map(Number);const dt=new Date(y,m-1,d);const lab=dt.toLocaleDateString(undefined,{month:'short',day:'numeric'});return `Shooter’s Touch Daily · ${lab}\n${grid.slice(0,10)}\n${score} pts`;}
 function dailyCard(score,grid,counted){
   const key=todayKey();const text=dailyShareText(score,grid,key);
   showPanel(`
@@ -521,7 +521,7 @@ function horseResolve(r){
       <div class="row"><button class="btn primary" data-a="horse-ready">Ready</button></div></div>`);}
     else{const code=encodeHorse(h);store.set('lastHorse',code);showPanel(`
       <div class="card"><div class="label">Send your turn</div>
-      <p class="strong">${h.last===1?'Shot is set. ':''}Text this code to your friend. They open Swish, tap HORSE, then Enter a code.</p>
+      <p class="strong">${h.last===1?'Shot is set. ':''}Text this code to your friend. They open Shooter’s Touch, tap HORSE, then Enter a code.</p>
       <div class="code" id="codeBox">${code}</div>
       <div class="row"><button class="btn primary" data-a="copy-code">Copy code</button><button class="btn" data-a="menu">Done</button></div>
       <div id="copyOut"></div>
@@ -685,7 +685,7 @@ function showMenu(){
   renderHud();setHint('');
   showPanel(`
     <div class="card">
-      <h2 class="logo">Swish</h2>
+      <h2 class="logo">Shooter’s<br>Touch</h2>
       <p>Pick your arc. Time your release. Three swishes in a row and you catch fire.</p>
       <div class="menu">
         <button class="mbtn" data-a="contest"><span class="t">3-Point Contest</span><span class="d">5 racks + 2 deep balls · pick your money rack</span><span class="r">${best?'Best '+best:''}</span></button>
@@ -753,7 +753,7 @@ syncSound();
 function renderHud(){
   const m=S.mode;let strip='';const prevScore=hud.score.textContent;
   const pips=`<div class="pips" aria-label="Swish streak">${[0,1,2].map(i=>`<span class="pip ${(S.onFire||i<S.swishStreak)?'on':''}"></span>`).join('')}</div>${S.onFire?'<span class="firetag">On fire ×2</span>':''}`;
-  if(m==='menu'){hud.mode.textContent='Swish';hud.sub.textContent='Pick your arc. Time your release.';hud.score.textContent=store.get('bestContest',0)||'0';hud.clock.textContent='Best';}
+  if(m==='menu'){hud.mode.textContent='Shooter’s Touch';hud.sub.textContent='Pick your arc. Time your release.';hud.score.textContent=store.get('bestContest',0)||'0';hud.clock.textContent='Best';}
   else if(m==='practice'){const P=S.practice;hud.mode.textContent='Practice';hud.sub.textContent=fmtFt(S.d)+' · '+(P.att?Math.round(P.made/P.att*100)+'% from the floor':'Find your release');hud.score.textContent=P.made;hud.clock.textContent=P.made+'/'+P.att;strip=pips;}
   else if(m==='contest'&&!S.contest){hud.mode.textContent='3-Point Contest';hud.sub.textContent='Pick your money rack';hud.score.textContent=store.get('bestContest',0)||'0';hud.clock.textContent='Best';}
   else if(m==='contest'){const C=S.contest;const q=C.seq[Math.min(C.i,C.seq.length-1)];hud.mode.textContent='3-Point Contest';hud.sub.textContent=`${q.deep?'Deep ball':'Rack '+(q.r+1)+' · '+q.n} · ${fmtFt(q.d)}${q.deep?' · 3 pts':q.money?' · Money ball':''}`;hud.score.textContent=S.score;
@@ -857,6 +857,7 @@ function update(dt,now){
   if(S.jt>=0){S.jt+=dt;if(S.jt-S.relDur>=0.5&&!S.landed){S.landed=true;spawnDust(releaseX(S.d)-7);}}
   if(S.phase==='release'&&S.jt>=S.relDur){
     if(S.mode==='challenger'&&S.chal&&S.chal.jump<=0){const cn=(Math.random()*2-1)*S.chal.level*0.05;S.pendP=clamp(S.pendP+cn,0,1);if(Math.abs(cn)>0.015)S.texts.push({t:'CONTESTED',color:COL.fire,size:20,x:W/2,y:170,life:1.2});}
+    S.shotLevel=(S.mode==='challenger'&&S.chal&&S.chal.jump<=0)?S.chal.level:null;
     S.ball=newBall(S.d);launch(S.ball,S.d,S.angle,S.pendP);S.phase='flight';S.trail=[];sfx.release();}
   // contest clock
   if(S.mode==='contest'&&S.contest&&!S.contest.over&&S.phase!=='idle'){
@@ -908,15 +909,17 @@ function update(dt,now){
 // ---------- draw ----------
 // ---------- atmosphere: crowd, ribbon board, the wild fan ----------
 const QUIPS={
-  make:["We gonna be here all day","Take me thru der Take me thru der","COOK HIM!","That's my cousin!!","Cash money!","Put that on a poster","Somebody get a mop, it's WET in here"],
+  make:["We gonna be here all day","Take me thru der Take me thru der","COOK HIM!","That's my cousin!!","Cash money!","Put that on a poster","Somebody get a mop, it's WET in here","Count it!","Pay the man!","Who's guarding him?!","Too easy!","Splash!","Can't guard him!"],
+  handdown:["Hand down, man down!","HAND DOWN, MAN DOWN!!","Put a hand up! Too late."],
+  contested:["In his EYE!","Sit DOWN!","Too small!","And he did it in your face!"],
   swish:["Nothing but NET!","Didn't even touch the rim!","Silky. SILKY."],
   laser:["LASER! Pew pew!","Frozen rope!!","Straight line, no chaser"],
   bank:["Glass is free I guess","You did NOT call bank"],
-  miss:["dirt + water = MUD","dont be mad UPS is hiring","Spread your fingers the ball needs rotation","The bricklayers' union called","My grandma's got a better jumper and she's 84","Shoot with your eyes OPEN","That rim's still ringing"],
-  airball:["AIR-BALL! AIR-BALL!","Did that even leave the gym?","The wind said no"],
-  block:["GET THAT OUTTA HERE!","Rejected! Return to sender"],
+  miss:["dirt + water = MUD","dont be mad UPS is hiring","Spread your fingers the ball needs rotation","The bricklayers' union called","My grandma's got a better jumper and she's 84","Shoot with your eyes OPEN","That rim's still ringing","Brick city!","CLANK!","Next!","You in the wrong gym","Ice cold","Ball don't lie"],
+  airball:["AIR-BALL! AIR-BALL!","Did that even leave the gym?","The wind said no","Wrong hoop?!"],
+  block:["GET THAT OUTTA HERE!","Rejected! Return to sender","Get that weak stuff outta here!","Not in my house!"],
   clock:["SHOOT THE BALL!!","Tick tock, tick tock"],
-  fire:["HE'S ON FIRE!","Somebody call the fire department!"],
+  fire:["HE'S ON FIRE!","Somebody call the fire department!","Can't stop it, can't contain it!","He's in the ZONE!"],
   distract:["Your shoe's untied!","Is that your mom calling?","Look over HERE!","Don't choke!","Brick incoming..."],
 };
 const quipBag={};
@@ -940,7 +943,7 @@ function fanUpdate(dt){
 }
 // ribbon board
 function ribbonFlash(msg,color){S.rib={msg,color:color||COL.amber,life:2.2,age:0};}
-function ribbonIdle(){const c=(store.get('ribbon','')||'').trim();const m={contest:'DEEP BALLS ARE WORTH 3',challenger:'BEAT THE CLOSEOUT',daily:"TODAY'S CHALLENGE",horse:'H - O - R - S - E',practice:'FIND YOUR RELEASE'}[S.mode]||'WELCOME TO SWISH';
+function ribbonIdle(){const c=(store.get('ribbon','')||'').trim();const m={contest:'DEEP BALLS ARE WORTH 3',challenger:'BEAT THE CLOSEOUT',daily:"TODAY'S CHALLENGE",horse:'H - O - R - S - E',practice:'FIND YOUR RELEASE'}[S.mode]||'WELCOME TO SHOOTER’S TOUCH';
   return [c||'SWISH',m,'MAKE SOME NOISE',c||'LET’S GO'].join('   •   ')+'   •   ';}
 function drawRibbon(now){
   const y=120,h=20;ctx.fillStyle='#07080F';ctx.fillRect(0,y,W,h);
@@ -1039,9 +1042,11 @@ function atmoReact(r,fire){
   else if(r.clean&&S.swishStreak===2)ribbonFlash('ONE MORE FOR FIRE',COL.amber);
   const cat=fire?'fire':r.label==='Blocked'?'block':r.label==='Shot clock'?'clock':r.label==='Airball'?'airball':
     r.made?(r.laser&&!r.swish?'laser':r.bank?'bank':r.swish&&Math.random()<0.5?'swish':'make'):'miss';
-  const always=fire||cat==='airball'||cat==='block'||cat==='clock';
+  let c2=cat;
+  if(r.made&&!fire&&S.shotLevel!=null){if(S.shotLevel<0.35&&Math.random()<0.75){c2='handdown';ribbonFlash('HAND DOWN MAN DOWN',COL.amber);}else if(S.shotLevel>0.7&&Math.random()<0.65)c2='contested';}
+  const always=fire||cat==='airball'||cat==='block'||cat==='clock'||c2==='handdown';
   fanReact(r.made||fire?(fire?'fire':'hype'):'heckle');
-  if(always||Math.random()<0.75)setTimeout(()=>{if(S.mode!=='menu')fanSay(cat);},reduced?0:350);
+  if(always||Math.random()<0.75)setTimeout(()=>{if(S.mode!=='menu')fanSay(c2);},reduced?0:350);
 }
 function atmoMade(sw,lz){
   sfx.cheer(sw||lz?1:0.6);S.armsUp=1.4;if(sw||lz)S.phones=1.6;
