@@ -379,7 +379,7 @@ function shoot(){
   if(Math.abs(off)>0.02)floatText('SLIPPED',COL.muted,24);
   if(defOn()){fakeBtn.hidden=true;if(S.chal.jump<=0)S.chal.contest=0.4;}
 }
-function meterSpeed(){return 0.45*(S.mode==='contest'&&S.contest?1+0.2*S.contest.i/S.contest.seq.length:1)*(S.onFire?1.15:1)*(S.meterMul||1)*meterArcMul(S.angle);}
+function meterSpeed(){return 0.45*(defOn()?1.2:1)*(S.mode==='contest'&&S.contest?1+0.2*S.contest.i/S.contest.seq.length:1)*(S.onFire?1.15:1)*(S.meterMul||1)*meterArcMul(S.angle);}
 
 function resolveShot(){
   const r=classify(S.ball,S.angle);
@@ -614,10 +614,10 @@ function horseJoinPanel(prefill=''){
 
 // ---------- Challenger ----------
 const TIERS=[
-  {n:'Park',setup:3.0,rise:3.2,hMax:262,bite:1,dMin:12,dMax:18,need:5,fade:false},
-  {n:'High School',setup:2.2,rise:2.3,hMax:252,bite:0.9,dMin:14,dMax:21,need:6,fade:false},
-  {n:'College',setup:1.6,rise:1.6,hMax:242,bite:0.7,dMin:16,dMax:23,need:6,fade:true},
-  {n:'Pro',setup:1.1,rise:1.1,hMax:232,bite:0.55,dMin:18,dMax:25,need:7,fade:true},
+  {n:'Park',setup:3.0,speed:95,rise:0.7,contest:0.025,hMax:272,bite:1,dMin:12,dMax:18,need:5,fade:false,pace:'Slow closeout'},
+  {n:'High School',setup:2.6,speed:120,rise:0.55,contest:0.032,hMax:269,bite:0.9,dMin:14,dMax:21,need:6,fade:false,pace:'Quick closeout'},
+  {n:'College',setup:2.2,speed:145,rise:0.45,contest:0.038,hMax:263,bite:0.7,dMin:16,dMax:23,need:6,fade:true,pace:'Fast closeout'},
+  {n:'Pro',setup:1.9,speed:170,rise:0.38,contest:0.045,hMax:259,bite:0.55,dMin:18,dMax:25,need:7,fade:true,pace:'Elite closeout'},
 ];
 const SHOT_CLOCK=5,HAND_LOW=335,DEF_GAP=42;
 const WEATHER={clear:{n:'Clear skies',tip:'Perfect conditions'},gusty:{n:'Gusty',tip:'Wind shifts mid-flight'},rain:{n:'Rain',tip:'Wet ball. Your grip may slip'},glare:{n:'Sun glare',tip:'Sun in your eyes. The meter washes out'},cold:{n:'Cold snap',tip:'Hard ball, lively rim, quick meter'},dusk:{n:'Dusk',tip:'Lights are out. Trust your stroke'}};
@@ -630,8 +630,8 @@ function chalPanel(){
   showPanel(`
     <div class="card">
       <h2>Challenger</h2>
-      <p>Five-second shot clock and a defender closing out. Make enough of your 10 shots to move up the ladder.</p>
-      <div class="menu">${TIERS.map((t,i)=>{const lock=i>un;return `<button class="mbtn ${i===sel?'sel':''}" data-a="tier" data-v="${i}" ${lock?'disabled':''}><span class="t">${t.n}</span><span class="d">${t.setup.toFixed(1)}s setup · ${t.dMin}–${t.dMax} ft · make ${t.need} of 10</span><span class="r">${lock?'Locked':i<=beat?'Cleared':''}</span></button>`;}).join('')}</div>
+      <p>Five-second shot clock. A defender sprints out from the rim, so get it off early or shoot over him. Make enough of your 10 shots to move up the ladder.</p>
+      <div class="menu">${TIERS.map((t,i)=>{const lock=i>un;return `<button class="mbtn ${i===sel?'sel':''}" data-a="tier" data-v="${i}" ${lock?'disabled':''}><span class="t">${t.n}</span><span class="d">${t.pace} · ${t.dMin}–${t.dMax} ft · make ${t.need} of 10</span><span class="r">${lock?'Locked':i<=beat?'Cleared':''}</span></button>`;}).join('')}</div>
       ${sel===0?`<button class="mbtn" data-a="wx"><span class="t">Park weather: ${wx?'On':'Off'}</span><span class="d">Rain, gusts, sun glare, cold, dusk. Changes every shot.</span></button>`:''}
       <p class="small-note">Tap <b>Pump fake</b> (or press F) to make the defender jump. Let him land, then shoot. Bigger leagues don't always bite.</p>
       <div class="row"><button class="btn primary" data-a="chal-go">Start ${TIERS[sel].n}</button><button class="btn" data-a="menu">Back</button></div>
@@ -652,20 +652,21 @@ function chalNext(){
   const C=S.chal,T=TIERS[C.tier];
   const d=T.dMin+Math.floor(Math.random()*(T.dMax-T.dMin+1));
   if(C.weatherOn)applyWeather(WX_BAG[Math.floor(Math.random()*WX_BAG.length)]);else applyWeather(null);
-  Object.assign(C,{clock:SHOT_CLOCK,el:0,level:0,jump:0,contest:0,faked:false,lockT:0,hy:HAND_LOW+10,cx:reduced?0:46});
+  chalReset(C,d);
   readyShot(d,S.wind);
   if(C.tier>=1&&Math.random()<0.65){fanReact('distract');setTimeout(()=>{if(F.state==='distract')fanSay('distract');},500);}
-  setHint(S.weather&&S.weather!=='clear'?`<b>${WEATHER[S.weather].n}.</b> ${WEATHER[S.weather].tip}`:`<b>Drag</b> to set your arc. You have ${T.setup.toFixed(1)}s before he closes out`);
+  setHint(S.weather&&S.weather!=='clear'?`<b>${WEATHER[S.weather].n}.</b> ${WEATHER[S.weather].tip}`:'<b>He’s closing out from the rim.</b> Get your shot off before he gets there');
   if(S.weather)floatText(WEATHER[S.weather].n.toUpperCase(),S.weather==='clear'?COL.good:COL.amber,28);
   fakeBtn.hidden=false;fakeBtn.disabled=false;
   renderHud();
 }
-function handTarget(){const C=S.chal,T=TIERS[C.tier];if(C.jump>0)return C.jump>0.45?T.hMax-30:HAND_LOW+10;return HAND_LOW-C.level*(HAND_LOW-T.hMax)-(C.contest>0?10:0);}
+function chalReset(C,d){const gap=Math.max(0,(RIM_C-10)-(releaseX(d)+DEF_GAP));Object.assign(C,{clock:SHOT_CLOCK,el:0,level:0,jump:0,contest:0,faked:false,lockT:0,hy:HAND_LOW+10,cx:gap,cx0:gap,react:0.25});}
+function handTarget(){const C=S.chal,T=TIERS[C.tier];if(C.jump>0)return C.jump>0.45?T.hMax-30:HAND_LOW+10;return HAND_LOW-C.level*(HAND_LOW-T.hMax)-(C.contest>0?3:0);}
 function handY(){const C=S.chal;return C.hy==null?handTarget():C.hy;}
 function handX(){return releaseX(S.d)+DEF_GAP-4+(S.chal.cx||0);}
 function checkBlock(B,ev){const hx=handX(),hy=handY();if(B.x>hx-BALL_R-6&&B.x<hx+6&&B.y>hy-BALL_R-4){B.blocked=true;B.vx=-Math.abs(B.vx)*0.25-40;B.vy=Math.abs(B.vy)*0.2+60;ev.push('block');}}
 function pumpFake(){
-  const C=S.chal;if(!C||S.mode!=='challenger'||(S.phase!=='aim'&&S.phase!=='power')||C.faked)return;
+  const C=S.chal;if(!C||!defOn()||(S.phase!=='aim'&&S.phase!=='power')||C.faked)return;
   C.faked=true;C.lockT=0.3;fakeBtn.disabled=true;sfx.release();
   if(Math.random()<TIERS[C.tier].bite){C.jump=0.9;C.level=0;floatText('HE BIT',COL.good,30);}
   else{C.level=Math.min(1,C.level+0.25);floatText("DIDN'T BITE",COL.fire,30);}
@@ -674,8 +675,14 @@ function chalUpdate(dt){
   const C=S.chal;if(!C)return;
   if(C.lockT>0)C.lockT-=dt;if(C.contest>0)C.contest-=dt;
   const live=S.phase==='aim'||S.phase==='power';
-  if(C.jump>0)C.jump-=dt;else if(live||S.phase==='flight'||S.phase==='release')C.level=Math.min(1,C.level+dt/TIERS[C.tier].rise);
-  {const tg=handTarget();C.hy=(C.hy==null?tg:C.hy)+(tg-(C.hy==null?tg:C.hy))*Math.min(1,dt*14);C.cx=(C.cx||0)*Math.max(0,1-dt*7);}
+  const T=TIERS[C.tier],active=live||S.phase==='flight'||S.phase==='release';
+  if(C.jump>0)C.jump-=dt;
+  else if(active){
+    if(C.react>0)C.react-=dt;
+    else if(C.cx>0){C.cx=Math.max(0,C.cx-T.speed*dt);const prox=C.cx0>0?1-C.cx/C.cx0:1;C.level=Math.max(C.level,prox<0.55?0:(prox-0.55)/0.45*0.6);}
+    else C.level=Math.min(1,C.level+dt/T.rise*0.4);
+  }
+  {const tg=handTarget();C.hy=(C.hy==null?tg:C.hy)+(tg-(C.hy==null?tg:C.hy))*Math.min(1,dt*14);}
   if(!live)return;
   C.el+=dt;C.clock=Math.max(0,SHOT_CLOCK-C.el);
   hud.clock.textContent=C.clock.toFixed(1)+'s';hud.clock.className='clock'+(C.clock<=2?' low':'');
@@ -703,10 +710,10 @@ function chalEnd(pass){track((pass?'clear-challenger-':'fail-challenger-')+['par
 }
 function drawDefender(now){
   if(!S.defLook)S.defLook=randomLook(curLook().team);const DL=S.defLook,DP=lookPal(DL,false);
-  const C=S.chal,air=C.jump>0?Math.sin(Math.PI*clamp(1-C.jump/0.9,0,1))*20:0,x=releaseX(S.d)+DEF_GAP+(C.cx||0),hx0=handX(),hy0=handY(),skin=DP.skin,skinD=DP.skinD,team=DP.team,teamD=DP.teamD,trim='#F4EFE6',crouch=air>0?0:2.5+(reduced?0:Math.sin(now/90)*0.6),dy=crouch-air;
+  const C=S.chal,air=C.jump>0?Math.sin(Math.PI*clamp(1-C.jump/0.9,0,1))*20:0,x=releaseX(S.d)+DEF_GAP+(C.cx||0),hx0=handX(),hy0=handY(),skin=DP.skin,skinD=DP.skinD,team=DP.team,teamD=DP.teamD,trim='#F4EFE6',crouch=air>0?0:2.5+(reduced?0:Math.sin(now/90)*0.6),moving=C.cx>0.5&&C.jump<=0&&C.react<=0&&S.phase!=='idle',rs=moving&&!reduced?Math.sin(now/55):0,dy=crouch-air-(moving?Math.abs(rs)*2:0);
   ctx.fillStyle=`rgba(0,0,0,${Math.max(0.08,0.26-air*0.01)})`;ctx.beginPath();ctx.ellipse(x+8,FLOOR+1,Math.max(8,16-air*0.3),3.2,0,0,7);ctx.fill();
   const footY=FLOOR-3-air*0.85;
-  [[11,14,skinD,teamD],[4,2,skin,team]].forEach(([hx2,fx,c,sc])=>{const hip=[x+hx2,352+dy],ft=[x+fx,footY],kn=ik(hip[0],hip[1],ft[0],ft[1],22.5,22.5,1);
+  [[11,14,skinD,teamD],[4,2,skin,team]].forEach(([hx2,fx,c,sc],i)=>{const sw=rs*(i?1:-1),hip=[x+hx2,352+dy],ft=[x+fx+sw*7,footY-(moving?Math.max(0,sw)*5:0)],kn=ik(hip[0],hip[1],ft[0],ft[1],22.5,22.5,1);
     limb([hip,kn,ft],c,6.5);limb([[ft[0]+(kn[0]-ft[0])*0.38,ft[1]+(kn[1]-ft[1])*0.38],[ft[0],ft[1]-2]],trim,6.5);shoe(ft[0],ft[1],sc,-1);});
   blob(()=>{ctx.moveTo(x-3,338+dy);ctx.lineTo(x+19,338+dy);ctx.lineTo(x+22,361+dy);ctx.lineTo(x+10,361+dy);ctx.lineTo(x+8,355+dy);ctx.lineTo(x+6,361+dy);ctx.lineTo(x-6,361+dy);ctx.closePath();},teamD);
   ctx.strokeStyle=trim;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x+19,340+dy);ctx.lineTo(x+21.5,359+dy);ctx.stroke();
@@ -791,7 +798,7 @@ function ppStart(){S.defLook=null;
 function ppNext(){
   const P=S.pp,[lo,hi]=PP_DIST[P.dist];const d=lo+Math.floor(Math.random()*(hi-lo+1));
   applyWeather(P.weather==='random'?WX_BAG[Math.floor(Math.random()*WX_BAG.length)]:P.weather);
-  if(S.chal){Object.assign(S.chal,{clock:SHOT_CLOCK,el:0,level:0,jump:0,contest:0,faked:false,lockT:0,hy:HAND_LOW+10,cx:reduced?0:46});}
+  if(S.chal)chalReset(S.chal,d);
   readyShot(d,S.wind);
   if(S.chal){fakeBtn.hidden=false;fakeBtn.disabled=false;if(S.chal.tier>=1&&Math.random()<0.5){fanReact('distract');setTimeout(()=>{if(F.state==='distract')fanSay('distract');},500);}}
   setHint(S.weather&&S.weather!=='clear'?`<b>${WEATHER[S.weather].n}.</b> ${WEATHER[S.weather].tip}`:'<b>Clear skies.</b> Drag to set your arc');
@@ -1041,7 +1048,7 @@ function update(dt,now){
    const want=side?'side':'front';if(S.facing!==want){S.facing=want;S.faceT=0;}S.faceT+=dt;}
   if(S.jt>=0){S.jt+=dt;if(S.jt-S.relDur>=0.5&&!S.landed){S.landed=true;spawnDust(releaseX(S.d)-7);}}
   if(S.phase==='release'&&S.jt>=S.relDur){
-    if(defOn()&&S.chal.jump<=0){const cn=(Math.random()*2-1)*S.chal.level*0.05;S.pendP=clamp(S.pendP+cn,0,1);if(Math.abs(cn)>0.015)S.texts.push({t:'CONTESTED',color:COL.fire,size:20,x:W/2,y:170,life:1.2});}
+    if(defOn()&&S.chal.jump<=0){const cn=(Math.random()*2-1)*S.chal.level*TIERS[S.chal.tier].contest;S.pendP=clamp(S.pendP+cn,0,1);if(Math.abs(cn)>0.015)S.texts.push({t:'CONTESTED',color:COL.fire,size:20,x:W/2,y:170,life:1.2});}
     S.shotLevel=(defOn()&&S.chal.jump<=0)?S.chal.level:null;
     S.ballVis={dy:(FLOOR-(FLOOR-RELEASE_Y)*HEIGHTS[curLook().height])-RELEASE_Y,t:0};
     S.ball=newBall(S.d);launch(S.ball,S.d,S.angle,S.pendP);S.phase='flight';S.trail=[];sfx.release();}
