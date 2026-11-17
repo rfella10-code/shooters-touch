@@ -1196,13 +1196,13 @@ function funMenu(){
   const skins=SKINS_U.map(([k,n,need])=>`<button class="chip ${S.skin===k?'on':''}" data-a="fun-skin" data-v="${k}" ${tot<need?'disabled':''}>${tot<need?n+' · '+need+'★':n}</button>`).join('');
   showPanel(`<div class="card fun">
     <div class="label">Funhouse · ${tot} of ${LEVELS.length*3} stars</div>
+    <button class="btn primary" data-a="fun-create" style="width:100%;flex-shrink:0">Create a Stunt</button>
     <div class="chips wtabs">${tabs}</div>
     <div class="fgrid">${grid}</div>
     ${cw<WORLDS.length-1&&!worldOpen(cw+1)?`<p class="small-note">Earn a star on 8 stunts here to open ${WORLDS[cw+1].n}.</p>`:''}
     <div class="row">
       <button class="btn primary" data-a="fun-chaos">Chaos Run${store.get('funChaos',0)?' · best '+store.get('funChaos',0):''}</button>
       <button class="btn" data-a="fun-daily">Stunt of the Day${today?' · '+today.score:''}</button>
-      <button class="btn" data-a="fun-create">Create a Stunt</button>
     </div>
     <p class="small-note">Chaos Run: a new twist every shot, three misses and you’re out. Two makes in a row earns a power-up.</p>
     <div class="label">Your ball in the other modes</div><div class="chips">${skins}</div>
@@ -2247,7 +2247,7 @@ function showMenu(){
       <h2 class="logo"><span>Shooter’s</span> <span>Touch</span></h2>
       <p class="intro">Pick your arc. Time your release. Then try it with a watermelon.</p>
       <div class="menu">
-        <button class="mbtn new" data-a="fun"><span class="t">Funhouse <em class="tagnew">New</em></span><span class="d">Four worlds, 48 stunts: watermelons, pigeons, a wrecking ball, a UFO</span><span class="r">${funTotal()?funTotal()+'★':''}</span></button>
+        <button class="mbtn new" data-a="fun"><span class="t">Funhouse <em class="tagnew">New</em></span><span class="d">${WORLDS.length} worlds, ${LEVELS.length} stunts. Build your own trick shot and share it.</span><span class="r">${funTotal()?funTotal()+'★':''}</span></button>
         <button class="mbtn" data-a="contest"><span class="t">3-Point Contest</span><span class="d">5 racks + 2 deep balls · pick your money rack</span><span class="r">${best?'Best '+best:''}</span></button>
         <button class="mbtn" data-a="challenger"><span class="t">Challenger</span><span class="d">5-second clock vs. a closing defender · 4-tier ladder</span><span class="r">${TIERS[Math.min(store.get('chalUnlocked',0),3)].n}</span></button>
         <button class="mbtn" data-a="daily"><span class="t">Daily Challenge</span><span class="d">Same 10 shots for everyone today</span><span class="r">${today?today.score+' pts':'New'}</span></button>
@@ -2264,9 +2264,13 @@ function copyText(text){track(S.mode==='horse'?'share-horse-code':'share-daily')
   const fallback=()=>{if(out){out.innerHTML='<textarea class="fallback" rows="3" readonly></textarea>';const t=out.querySelector('textarea');t.value=text;t.focus();t.select();}};
   try{navigator.clipboard.writeText(text).then(()=>{if(out)out.innerHTML='<p class="small-note">Copied.</p>';},fallback);}catch(e){fallback();}
 }
+const KEEP_SCROLL=new Set(['cs','lk','lk-rand','pp','fun-skin','fun-world','tier','wx','mrack','call','d-','d+']);
 overlay.addEventListener('click',e=>{
   const b=e.target.closest('[data-a]');if(!b)return;ac();
   const a=b.dataset.a;
+  // option chips redraw their own panel: keep the scroll spot and skip the pop-in so the screen doesn't jump
+  if(KEEP_SCROLL.has(a)){const c0=overlay.querySelector('.card'),ci=document.getElementById('csIn'),keep={y:c0?c0.scrollTop:0,ci:ci?ci.value:null};
+    queueMicrotask(()=>{const c=overlay.querySelector('.card');if(c){c.style.animation='none';c.scrollTop=keep.y;}const ci2=document.getElementById('csIn');if(ci2&&keep.ci)ci2.value=keep.ci;});}
   if(a==='menu')showMenu();
   else if(a==='fun')funMenu();
   else if(a==='fun-level')funStart('ladder',+b.dataset.v);
