@@ -324,7 +324,20 @@ const store={get(k,f){try{const v=localStorage.getItem('swish:'+k);return v==nul
 // ---------- sound ----------
 let actx=null,soundOn=store.get('sound',true);
 // background music: drop a file named song.mp3 next to index.html. If it's missing, nothing plays.
-const music=new Audio(window.SWISH_SONG||'song.mp3');music.loop=true;music.volume=0.35;let musicOk=true;music.addEventListener('error',()=>{musicOk=false;});
+const music=new Audio(window.SWISH_SONG||'song.mp3');music.loop=true;music.volume=0.35;let musicOk=true;
+// per-world songs: files sit next to index.html. One audio element (phones only unlock one), crossfade by swapping its source.
+const TRACKS={main:window.SWISH_SONG||'song.mp3',A:'songA.mp3',B:'songB.mp3',C:'songC.mp3',D:'songD.mp3'};
+const WORLD_SONG={4:'A',3:'C',9:'C',8:'D',10:'D'},MUS_VOL=0.35;
+let musCur='main',musWant='main',musFade=null;const musPos={},musBad={};
+music.addEventListener('error',()=>{if(musCur!=='main'){musBad[musCur]=true;musWant='?';}else musicOk=false;});
+function wantTrack(){try{if(S.mode==='fun'&&Q&&Q.T){if(Q.T.boss)return'B';const k=WORLD_SONG[Q.T.w|0];if(k)return k;}}catch(e){}return'main';}
+function musicTick(){let t=wantTrack();if(musBad[t])t='main';if(t===musWant)return;musWant=t;switchTrack(t);}
+function switchTrack(t){if(musFade){clearInterval(musFade);musFade=null;}
+  const swap=()=>{if(musWant!==t)return;musPos[musCur]=music.currentTime||0;musCur=t;musicOk=true;music.volume=0;music.src=TRACKS[t];
+    const at=musPos[t]||0;if(at){const f=()=>{music.removeEventListener('loadedmetadata',f);try{music.currentTime=at%(music.duration||1e9);}catch(e){}};music.addEventListener('loadedmetadata',f);}
+    syncMusic();let v=0;musFade=setInterval(()=>{v=Math.min(MUS_VOL,v+MUS_VOL/14);music.volume=v;if(v>=MUS_VOL){clearInterval(musFade);musFade=null;}},50);};
+  if(music.paused){swap();return;}
+  let v=music.volume;musFade=setInterval(()=>{v=Math.max(0,v-MUS_VOL/10);music.volume=v;if(v<=0){clearInterval(musFade);musFade=null;swap();}},50);}
 // go quiet the moment the player leaves (switching apps or tabs, locking the phone, closing), pick back up when they return
 let away=false;
 function goQuiet(){away=true;try{music.pause();}catch(e){}try{if(actx&&actx.state==='running')actx.suspend();}catch(e){}}
@@ -2996,7 +3009,7 @@ function drawBall(B){
 
 // ---------- loop ----------
 let last=performance.now();
-function frame(now){const dt=Math.min(0.05,(now-last)/1000);last=now;update(dt,now);draw(now);requestAnimationFrame(frame);}
+function frame(now){const dt=Math.min(0.05,(now-last)/1000);last=now;update(dt,now);draw(now);musicTick();requestAnimationFrame(frame);}
 
 readCols();resize();
 try{if(document.fonts){document.fonts.load('600 20px "ST Display"');document.fonts.load('500 14px "ST Display"');document.fonts.load('700 14px "ST Text"');}}catch(e){}
